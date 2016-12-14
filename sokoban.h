@@ -15,6 +15,8 @@
 char stage[20][20]; //Current Stage
 int level = 0; //Current level
 int x, y; //Current 캐릭터 위치
+int count = 0; //EndPoint 갯수
+int walk = 0;
 
 typedef struct point{
 	int x;
@@ -22,11 +24,10 @@ typedef struct point{
 }point;
 
 void PrintTitle();
-void set_cr_noecho_mode();
-void PrintStage(int *);
-void set_location();
-void handler();
-void tty_mode(int);
-void ctrl_c_handler(int);
+int PrintStage();
+void SetLocation();
+void Handler();
+void PrintEnding();
+void ResetCurrentStage();
 
 #endif
