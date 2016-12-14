@@ -12,34 +12,38 @@
 
 int main()
 {
-	void ctrl_c_handler(int);
-
 	initscr();
-	tty_mode(0);
-	set_cr_noecho_mode();
 	clear();
 
 	PrintTitle(); // 타이틀을 출력합니다.
 	getch();
 	
-	signal(SIGINT, ctrl_c_handler);
+	signal(SIGINT, SIG_IGN);
 	signal(SIGQUIT, SIG_IGN);
 	while(1){
 		
 		memcpy(stage, Stage[level], sizeof(Stage)); // Stage를 하나씩 불러와 현재 스테이지인 stage에 저장한다.
 		clear();
 
-		set_location(); // 가져온 stage 데이터에서  현재 캐릭터의  위치를 읽는다.
+		SetLocation(); // 가져온 stage 데이터에서  현재 캐릭터의  위치를 읽는다.
 
 		while(1){
-			PrintStage(&level); // 게임 스테이지를 출력한다.
+			if (PrintStage() == 1) // 게임 스테이지를 출력한다.8
+				break;
+			
 			refresh();
-			handler();
+			Handler();
 		}
+
+		if (level == MAXSTAGE){
+			PrintEnding();
+			break;
+		}
+			
 	}
-	getch();
+
+	sleep(1);
 	endwin();
-	tty_mode(1);
 	return 0;
 }
 
@@ -60,28 +64,17 @@ void PrintTitle() // 타이틀을 출력합니다.
 	move(LINES-1,COLS-1);
 }
 
-void set_cr_noecho_mode()
-{
-	struct termios ttystate;
-
-	tcgetattr(0, &ttystate);
-	ttystate.c_lflag &= ~ICANON;
-	ttystate.c_lflag &= ~ECHO;
-	ttystate.c_cc[VMIN] = 1;
-	tcsetattr(0, TCSANOW, &ttystate);
-}
-
-void PrintStage(int *lv) // 게임 스테이지를 출력합니다.
+int PrintStage() // 게임 스테이지를 출력합니다.
 {
 	int stagex, stagey;
 	char stagelv[2];
-	int stageclear = 0;
-	sprintf(stagelv, "Stage %d", *lv);
+	int stageclear = 1; //1 : 클리어
+	sprintf(stagelv, "Stage %d", level);
 
 	for(stagex=0;stagex<20;stagex++){
 		for(stagey=0;stagey<20;stagey++){
 			putxy(stagex, stagey, stage[stagex][stagey]);
-			if (stage[stagex][stagey] == '1') stageclear = 1;
+			if (stage[stagex][stagey] == '1') stageclear = 0; //도착점이 있을 경우 클리어X
 		}
 	}
 
@@ -91,7 +84,7 @@ void PrintStage(int *lv) // 게임 스테이지를 출력합니다.
 	move(2, 30);
 	addstr(stagelv);
 	
-	if ( stageclear == 1 ) {
+	if ( stageclear == 0 ) {
 	// 조작키 설명을 출력합니다.
 		move(8,31);
 		addstr("key");
@@ -103,20 +96,26 @@ void PrintStage(int *lv) // 게임 스테이지를 출력합니다.
 		addstr(" s = 'down' ");
 		move(13,27);
 		addstr(" d = 'right'");
-		move(15,27);
+		move(14, 27);
+		addstr(" r = 'reset'");
+		move(16,27);
 		addstr(" q = 'quit' ");
 	}
-	else {
+	else if(stageclear == 1){
+		clear();
 		move(8,31);
-		addstr("clear!");
-		*lv++;
-		return;
-		
+		addstr("Stage clear!");
+		refresh();
+		sleep(1);
+		count = 0;
+		level++;
 	}
+
 	move(LINES-1, COLS-1);
+	return stageclear;
 }
 
-void set_location() // 가져온 stage에서 현재 캐릭터의 위치를 읽는다.
+void SetLocation() // 가져온 stage에서 현재 캐릭터의 위치를 읽는다.
 {
 	int i, j;
 
@@ -131,14 +130,13 @@ void set_location() // 가져온 stage에서 현재 캐릭터의 위치를 읽�
 	}
 }
 
-void handler()
+void Handler()
 {
 	int i;
 	int dx = 0, dy = 0;
 	int next_x, next_y; //이동시 x, y좌표
 	int nextbox_x, nextbox_y; //상자 이동시 x, y좌표
 	static point end_point[MAXSIZE];
-	static int count = 0;
 	char c;
 	
 	c = getchar();
@@ -155,9 +153,11 @@ void handler()
 	case 'd':
 		dx=0, dy=1;	
 		break;
+	case 'r':
+		ResetCurrentStage();
+		return;
 	case 'q':
 		endwin();
-		tty_mode(1);
 		exit(0);
 	}
 
@@ -183,7 +183,7 @@ void handler()
 		}
 	}
 
-	for(i=0;i<=count;i++)
+	for(i=0;i<count;i++)
 	{
 		if(stage[end_point[i].x][end_point[i].y] == ' ') // 바구니에 들어간 공이 다시 나왔을 때
 			stage[end_point[i].x][end_point[i].y] = '1'; // 다시 바구니를 세팅해준다.
@@ -193,26 +193,21 @@ void handler()
 	y += dy;
 }
 
-void ctrl_c_handler(int signum)
-{
-	endwin();
-	tty_mode(1);
-	exit(1);
+void PrintEnding(){
+
+	clear();
+
+	move(11, 28);
+	addstr("Game Complited!!");
+	refresh();
+
+	move(LINES - 1, COLS - 1);
 }
 
-void tty_mode(int how)
-{
-	static struct termios original_mode;
-	static int original_flags;
-	static int stored = 0;
+void ResetCurrentStage(){
+	memcpy(stage, Stage[level], sizeof(Stage)); // Stage를 하나씩 불러와 현재 스테이지인 stage에 저장한다.
+	
+	SetLocation(); // 가져온 stage 데이터에서  현재 캐릭터의  위치를 읽는다.
 
-	if(how == 0){
-		tcgetattr(0, &original_mode);
-		original_flags = fcntl(0, F_GETFL);
-		stored = 1;
-	}
-	else if(stored){
-		tcsetattr(0, TCSANOW, &original_mode);
-		fcntl(0, F_SETFL, original_flags);
-	}
+	count = 0;
 }
