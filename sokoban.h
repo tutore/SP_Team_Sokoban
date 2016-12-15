@@ -16,6 +16,8 @@ char stage[20][20]; //Current Stage
 int level = 0; //Current level
 int x, y; //Current 캐릭터 위치
 int count = 0; //EndPoint 갯수
+int walk = 0;
+int countdown = 60;
 
 typedef struct point{
 	int x;
@@ -28,5 +30,7 @@ void SetLocation();
 void Handler();
 void PrintEnding();
 void ResetCurrentStage();
+void StageTimer(int);
+int SetTimer(int);
 
 #endif
