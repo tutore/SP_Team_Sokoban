@@ -6,27 +6,20 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <signal.h>
-#include <sys/time.h>
 
 #include "sokoban.h"
 #include "stage.h"
 
-
 int main()
 {
-	void StageTimer(int);
-
 	initscr();
 	clear();
 
 	PrintTitle(); // 타이틀을 출력합니다.
-	getch(); // 아무 키나 입력 받으면 게임을 시작합니다.
+	getch();
 	
 	signal(SIGINT, SIG_IGN);
 	signal(SIGQUIT, SIG_IGN);
-	signal(SIGALRM, StageTimer);
-
-	
 	while(1){
 		
 		memcpy(stage, Stage[level], sizeof(Stage)); // Stage를 하나씩 불러와 현재 스테이지인 stage에 저장한다.
@@ -34,14 +27,10 @@ int main()
 
 		SetLocation(); // 가져온 stage 데이터에서  현재 캐릭터의  위치를 읽는다.
 
-		if (SetTimer(1000) == -1)
-			perror("SetTimer");
-
-		walk = 0;
-		countdown = 60;
 		while(1){
 			if (PrintStage() == 1) // 게임 스테이지를 출력한다.8
 				break;
+			
 			refresh();
 			Handler();
 		}
@@ -50,6 +39,7 @@ int main()
 			PrintEnding();
 			break;
 		}
+			
 	}
 
 	sleep(1);
@@ -77,11 +67,9 @@ void PrintTitle() // 타이틀을 출력합니다.
 int PrintStage() // 게임 스테이지를 출력합니다.
 {
 	int stagex, stagey;
-	char stagelv[10];
-	char stagewalk[10];
+	char stagelv[2];
 	int stageclear = 1; //1 : 클리어
-	sprintf(stagelv, " Stage %d ", level);
-	sprintf(stagewalk, "Move : %d", walk);
+	sprintf(stagelv, "Stage %d", level);
 
 	for(stagex=0;stagex<20;stagex++){
 		for(stagey=0;stagey<20;stagey++){
@@ -91,39 +79,31 @@ int PrintStage() // 게임 스테이지를 출력합니다.
 	}
 
 	putxy(x, y, '@'); // 캐릭터를 출력합니다.
-	
-	// 현재 스테이지 난이도를 출력합니다.
-	move(2, 29);
-	addstr("          ");
-	move(2, 29);
-	addstr(stagelv);
 
-	// 현재 스테이지에서 걸은 횟수를 출력합니다.
-	move(6,30);
-	addstr("          ");
-	move(6,30);
-	addstr(stagewalk);
+	// 현재 스테이지 난이도를 출력합니다.
+	move(2, 30);
+	addstr(stagelv);
 	
 	if ( stageclear == 0 ) {
 	// 조작키 설명을 출력합니다.
-		move(8,32);
+		move(8,31);
 		addstr("key");
-		move(10,28);
+		move(10,27);
 		addstr(" w = 'up'   ");
-		move(11,28);
+		move(11,27);
 		addstr(" a = 'left' ");
-		move(12,28);
+		move(12,27);
 		addstr(" s = 'down' ");
-		move(13,28);
+		move(13,27);
 		addstr(" d = 'right'");
-		move(14, 28);
+		move(14, 27);
 		addstr(" r = 'reset'");
-		move(16,28);
+		move(16,27);
 		addstr(" q = 'quit' ");
 	}
 	else if(stageclear == 1){
 		clear();
-		move(8,32);
+		move(8,31);
 		addstr("Stage clear!");
 		refresh();
 		sleep(1);
@@ -211,9 +191,6 @@ void Handler()
 
 	x += dx;
 	y += dy;
-
-	if (c == 'w' || c == 'a' || c == 's' || c == 'd')
-		walk++;
 }
 
 void PrintEnding(){
@@ -232,60 +209,5 @@ void ResetCurrentStage(){
 	
 	SetLocation(); // 가져온 stage 데이터에서  현재 캐릭터의  위치를 읽는다.
 
-	if (SetTimer(1000) == -1)
-		perror("SetTimer");
-
 	count = 0;
-	walk = 0;
-	countdown = 60;
-}
-
-void StageTimer(int signum){
-
-	char countd[15];
-
-	move(4, 29);
-	addstr("           ");
-	move(4, 29);
-	sprintf(countd, "Timer : %d", countdown--);
-	addstr(countd);
-	move(LINES - 1, COLS - 1);
-	refresh();
-
-	if (countdown < 0){
-		clear();
-		move(11, 28);
-		addstr("Game Over!");
-		move(14, 30);
-		addstr("Continue : r");
-		move(LINES - 1, COLS - 1);
-		refresh();
-
-		if (getch() == 'r'){
-			ResetCurrentStage();
-			move(14, 30);
-			addstr("            ");
-			PrintStage();
-		}
-		else{
-			endwin();
-			exit(0);
-		}
-	}
-}
-
-int SetTimer(int n_msecs){
-
-	struct itimerval timeset;
-	long n_sec, n_usecs;
-
-	n_sec = n_msecs / 1000;
-	n_usecs = (n_msecs % 1000) * 1000L;
-
-	timeset.it_interval.tv_sec = n_sec;
-	timeset.it_interval.tv_usec = n_usecs;
-	timeset.it_value.tv_sec = 0;
-	timeset.it_value.tv_usec = 1;
-
-	return setitimer(ITIMER_REAL, &timeset, NULL);
 }
