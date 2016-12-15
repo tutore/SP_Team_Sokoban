@@ -29,7 +29,7 @@ int main()
 	
 	while(1){
 		
-		memcpy(stage, Stage[level], sizeof(Stage)); // Stage를 하나씩 불러와 현재 스테이지인 stage에 저장한다.
+		memcpy(stage, Stage[level], sizeof(stage)); // Stage를 하나씩 불러와 현재 스테이지인 stage에 저장한다.
 		clear();
 
 		SetLocation(); // 가져온 stage 데이터에서  현재 캐릭터의  위치를 읽는다.
@@ -228,7 +228,7 @@ void PrintEnding(){
 }
 
 void ResetCurrentStage(){
-	memcpy(stage, Stage[level], sizeof(Stage)); // Stage를 하나씩 불러와 현재 스테이지인 stage에 저장한다.
+	memcpy(stage, Stage[level], sizeof(stage)); // Stage를 하나씩 불러와 현재 스테이지인 stage에 저장한다.
 	
 	SetLocation(); // 가져온 stage 데이터에서  현재 캐릭터의  위치를 읽는다.
 

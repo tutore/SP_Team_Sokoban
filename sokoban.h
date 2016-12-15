@@ -7,7 +7,7 @@
 #define UP 72
 #define DOWN 80
 
-#define MAXSTAGE 5 //Stage 갯수
+#define MAXSTAGE 10 //Stage 갯수
 #define MAXSIZE 200
 
 #define putxy(x,y,c) {move(x,y); addch(c);}
